@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#150e28">
+<title>Quarto Mágico</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#efe6ff;--panel:#ffffff;--ink:#2a1a4a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#150e28;--panel:#241a40;--ink:#f3eaff}}
+:root[data-theme="dark"]{--bg:#150e28;--panel:#241a40;--ink:#f3eaff}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Press Start 2P",ui-monospace,monospace;display:flex;flex-direction:column;align-items:center;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#hud{width:100%;max-width:520px;display:flex;justify-content:space-between;padding:10px 12px 4px;font-size:8px;box-sizing:border-box}
+#ctl{display:flex;gap:8px;padding:4px 12px 0;width:100%;max-width:520px;box-sizing:border-box}
+#ctl button{font:inherit;font-size:12px;padding:12px 14px;background:var(--panel);color:var(--ink);border:3px solid var(--ink);border-radius:6px;cursor:pointer;touch-action:none;-webkit-touch-callout:none}
+#ctl #sp{flex:1;position:relative;overflow:hidden;font-size:9px;border-color:#9ad8ff}
+#ctl #sp.rdy{background:#9ad8ff;color:#150e28}
+#spf{position:absolute;left:0;bottom:0;height:5px;width:0;background:#9ad8ff}
+#hp{color:#e04b4b}
+#ov #new,#ov #nw,#ov #inst,#ov #hw{background:#3a2a6a}
+#mu{font:inherit;font-size:8px;background:var(--panel);color:var(--ink);border:2px solid var(--ink);border-radius:4px;padding:4px 6px;cursor:pointer}
+#msg{min-height:14px;font-size:9px;line-height:1.4;text-align:center;padding:0 12px 6px}
+#stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+canvas{image-rendering:pixelated;background:#000;border-radius:4px;touch-action:none}
+#spells{display:flex;gap:8px;padding:10px 12px 14px;width:100%;max-width:520px;box-sizing:border-box}
+#spells button{flex:1;font:inherit;font-size:9px;padding:14px 4px;background:var(--panel);color:var(--ink);border:3px solid var(--c);border-radius:6px;cursor:pointer}
+#spells button.on{background:var(--c);color:#150e28}
+#spells button:disabled{opacity:.3}
+#spells button:focus-visible,#ov button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#ov{position:fixed;inset:0;background:rgba(21,14,40,.88);display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:12px;text-align:center;padding:16px;color:#f3eaff;overflow-y:auto}
+#ov h1{font-size:20px;margin:0;line-height:1.4;color:#ffd23f}
+#ov p{font-size:10px;line-height:1.8;margin:0;max-width:320px}
+#ov button{font:inherit;font-size:12px;padding:16px 22px;background:#c0262d;color:#fff;border:3px solid #ffd23f;border-radius:6px;cursor:pointer}
+#pt{width:96px;height:128px;background:#3a2a6a;border-radius:6px}
+#how{position:fixed;inset:0;background:rgba(21,14,40,.97);color:#f3eaff;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:12px;padding:16px;overflow-y:auto;font-size:9px;line-height:1.7;z-index:5}
+#how h2{font-size:14px;color:#ffd23f;margin:0}
+#how ul{list-style:none;padding:0;margin:0;max-width:340px}
+#how li{margin:0 0 9px}
+#how b{color:#ffd23f}
+#how button{font:inherit;font-size:12px;padding:14px 20px;background:#c0262d;color:#fff;border:3px solid #ffd23f;border-radius:6px;cursor:pointer}
+#how[hidden]{display:none}
+#ov[hidden]{display:none}
+</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Quarto Mágico"></head>
+<body>
+<div id="hud"><span id="lv"></span><span id="pts"></span><span id="tm"></span><span id="left"></span><span id="hp"></span><button id="mu" aria-label="Ligar ou desligar a música">♪ ON</button></div>
+<div id="msg"></div>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="ctl"><button id="bl" aria-label="Mover para a esquerda">◀</button><button id="sp"><i id="spf"></i><span id="spt">Patronum 0%</span></button><button id="br" aria-label="Mover para a direita">▶</button></div>
+<div id="spells"></div>
+<div id="ov"><canvas id="pt" width="48" height="64"></canvas><h1>QUARTO MÁGICO</h1><p>Esta é a Isabella, uma bruxinha curiosa de capa vermelha e chapéu pontudo. Hoje o quarto dela virou uma bagunça mágica!</p><p>Escolha um feitiço e toque no objeto para ajudá-la a arrumar tudo. Acerte em sequência para fazer combos e ganhar mais pontos!</p><button id="go">Começar</button><button id="new" hidden>Novo jogo</button><button id="hw">Como jogar</button><button id="inst" hidden>Instalar no celular</button></div>
+<div id="how" hidden><h2>COMO JOGAR</h2><ul><li>1. Toque em um <b>feitiço</b> lá embaixo e depois no objeto bagunçado.</li><li>2. <b>Leviosa</b> (azul) levanta livros, meias e blocos.</li><li>3. <b>Reparo</b> (amarelo) conserta vasos e canecas quebrados.</li><li>4. <b>Scourgify</b> (verde) limpa manchas e poeira.</li><li>5. Acertos seguidos fazem <b>combo</b> e rendem mais pontos. Errar tira pontos e tempo.</li><li>6. Arrume tudo antes de o <b>relógio</b> acabar.</li><li>7. A cada 5 níveis surge a <b>Super Sujeira</b>: desvie da faixa vermelha com ◀ ▶ e use o feitiço que ela pedir.</li><li>8. Arrumar o quarto enche a barra <b>Patronum</b>. Cheia, toque nela para atacar o chefão.</li><li>9. Seu progresso fica salvo neste celular.</li></ul><button id="hok">Entendi!</button></div>
+<script>
+const $=id=>document.getElementById(id),W=160,H=240,cv=$('c'),g=cv.getContext('2d');
+cv.width=W;cv.height=H;
+const r=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h)};
+const COL={lev:'#5ec8ff',rep:'#ffd23f',scr:'#7dff8a'},NAME={lev:'Leviosa',rep:'Reparo',scr:'Scourgify'},ORDER=['lev','rep','scr'];
+const TYPE={book:'lev',sock:'lev',block:'lev',vase:'rep',cup:'rep',stain:'scr',dust:'scr'};
+const POOL=[['book','sock','block'],['book','sock','block','vase','cup'],['book','sock','block','vase','cup','stain','dust']];
+const INTRO=['Wingardium Leviosa faz os objetos flutuarem!','Novo feitiço: Reparo conserta o que está quebrado!','Novo feitiço: Scourgify limpa a sujeira!'];
+let level=1,items=[],parts=[],sel='lev',state='title',t=0,cast=0,msgT=0,last=0,score=0,combo=0,best=0,lvScore=0,timeLeft=0,timed=false,pops=[],boss=null,lives=3,inv=0,pat=null,hx=68,mv=0,charge=0;
+try{level=+localStorage.getItem('qm_level')||1;best=+localStorage.getItem('qm_best')||0;score=+localStorage.getItem('qm_score')||0;charge=+localStorage.getItem('qm_ch')||0}catch(e){}
+const PAL={h:'#5a3a22',k:'#2a1810',s:'#f0c8a0',e:'#222',r:'#c0262d',b:'#1d1d26',w:'#a8743a'};
+const HERO=['.....hh.....','....hhhh....','...hhhhhh...','..hhhhhhhh..','hhhhhhhhhhhh','.kksssssskk.','.kksesseskk.','.kksssssskk.','.kk.ssss.kk.','..brrrrrrb..','.bbrrbbrrbb.','.bbrrbbrrbbw','.bbrrbbrrbb.','..bbbbbbbb..','..bb....bb..','..ss....ss..'];
+function spr(m,x,y,k){m.forEach((row,j)=>[...row].forEach((ch,i)=>{if(ch!=='.')r(x+i*k,y+j*k,k,k,PAL[ch])}))}
+function say(s){$('msg').textContent=s;msgT=2.2}
+function tone(f,d,ty='square',v=.06){try{const a=tone.a||(tone.a=new (window.AudioContext||window.webkitAudioContext)());const o=a.createOscillator(),n=a.createGain();o.type=ty;o.frequency.value=f;n.gain.value=v;o.connect(n);n.connect(a.destination);o.start();n.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.stop(a.currentTime+d)}catch(e){}}
+const nSp=()=>Math.min(level,3);
+function buildSpells(){const box=$('spells');box.innerHTML='';ORDER.forEach((k,i)=>{const b=document.createElement('button');b.textContent=NAME[k];b.style.setProperty('--c',COL[k]);b.disabled=i>=nSp();b.className=k===sel?'on':'';b.onclick=()=>{sel=k;buildSpells();tone(520,.08)};box.appendChild(b)})}
+function startLevel(){
+  const pool=POOL[Math.min(level,3)-1];boss=level%5===0?{x:56,y:108,hp:4+Math.floor(level/5)*2,max:4+Math.floor(level/5)*2,need:'scr',d:-1,sh:0,fl:0}:null;const n=boss?3:Math.min(3+level,10);items=[];lvScore=score;combo=0;lives=3;inv=0;pat=null;hx=68;timed=level>=2;timeLeft=Math.max(18,45-(level-2)*3)+(boss?45:0);
+  for(let i=0;i<n;i++){let x,y,ok,tries=0;do{x=6+Math.random()*116;y=106+Math.random()*64;ok=items.every(o=>Math.hypot(o.x-x,o.y-y)>(tries<80?28:18))&&(!boss||Math.hypot(x+12-80,y+10-132)>(tries<80?60:40));tries++}while(!ok&&tries<160);
+    items.push({k:pool[Math.floor(Math.random()*pool.length)],x,y,v:Math.random()<.5,c:Math.floor(Math.random()*4),d:-1,sh:0,vx:level>=4?(Math.random()<.5?-1:1)*Math.min((level-3)*4,30):0})}
+  if(!ORDER.slice(0,nSp()).includes(sel))sel='lev';
+  state='play';$('ov').hidden=true;buildSpells();say(boss?'CHEFÃO! Desvie com ◀ ▶ e use o Patronum!':(level<=3?INTRO[level-1]:'Arrume tudo!'));
+}
+const BK=['#b3402f','#3f6fd1','#2d8f5f','#8a4fd1'],AC=['#e04b8a','#3fa7f5','#ffb703','#5ec27a'],IN={book:'livro',sock:'meia',block:'bloco',vase:'vaso',cup:'caneca',stain:'mancha',dust:'poeira'};
+const shp=p=>{p.forEach(([x,y,w,h])=>r(x-1,y-1,w+2,h+2,'#1a1030'));p.forEach(([x,y,w,h,c])=>r(x,y,w,h,c))};
+function drawItem(it){
+  const X=it.x+(it.sh>0?Math.sin(t*70)*1.6:0),Y=it.y-(it.d>=0?it.d*40:0);
+  g.save();if(it.d>=0)g.globalAlpha=Math.max(0,1-it.d/.5);g.translate(X,Y);g.scale(2,2);g.translate(-X,-Y);
+  switch(it.k){
+    case'book':{const q=BK[it.c];it.v?shp([[X,Y,8,11,q],[X+1,Y+8,6,3,'#f6e7c1'],[X,Y,2,11,'rgba(0,0,0,.3)'],[X+3,Y+2,4,2,'#ffd23f'],[X+3,Y+5,3,1,'#f6e7c1']]):shp([[X,Y,11,6,q],[X+1,Y+6,10,2,'#f6e7c1'],[X,Y,2,8,'rgba(0,0,0,.3)'],[X+4,Y+2,5,2,'#ffd23f']]);break}
+    case'sock':{const q=AC[it.c];shp([[X,Y,5,9,'#fff'],[X,Y+6,10,4,'#fff'],[X,Y+1,5,1,q],[X,Y+3,5,1,q],[X+7,Y+6,3,4,q],[X,Y+8,2,2,q]]);break}
+    case'block':{const q=AC[3-it.c];shp([[X,Y,10,10,q],[X,Y,10,2,'rgba(255,255,255,.4)'],[X+8,Y+2,2,8,'rgba(0,0,0,.25)'],[X+3,Y+3,4,4,'#fff'],[X+4,Y+4,2,2,q]]);break}
+    case'vase':shp([[X+1,Y+4,8,8,'#2d8f85'],[X+3,Y+1,4,4,'#2d8f85'],[X+2,Y,6,2,'#4fc1b5'],[X+11,Y+9,4,3,'#2d8f85'],[X-3,Y+10,3,2,'#2d8f85']]);r(X+5,Y+4,1,2,'#0d2b28');r(X+4,Y+6,1,2,'#0d2b28');r(X+5,Y+8,1,3,'#0d2b28');r(X+3,Y+5,2,3,'rgba(255,255,255,.3)');break;
+    case'cup':shp([[X,Y+2,8,8,'#f2f2f2'],[X+8,Y+4,3,5,'#f2f2f2'],[X+11,Y+10,3,2,'#f2f2f2']]);r(X,Y+4,8,2,'#e04b8a');r(X+9,Y+5,1,3,'#9c6b3f');r(X+3,Y+2,1,4,'#555');r(X+4,Y+5,1,3,'#555');break;
+    case'stain':shp([[X+2,Y,8,2,'#6b4a2b'],[X,Y+2,12,4,'#6b4a2b'],[X+2,Y+6,8,2,'#6b4a2b'],[X+12,Y+3,2,2,'#6b4a2b'],[X+3,Y+9,2,2,'#6b4a2b']]);r(X+3,Y+2,3,1,'#8a6a45');r(X+8,Y+4,2,1,'#8a6a45');break;
+    case'dust':shp([[X+2,Y+2,8,8,'#c9c9c9'],[X,Y+4,12,4,'#c9c9c9'],[X+4,Y,4,12,'#c9c9c9']]);r(X+4,Y+5,1,2,'#222');r(X+7,Y+5,1,2,'#222');r(X+2,Y+3,2,1,'#fff');break}
+  g.restore();
+  if(level<4&&it.d<0){r(X+10,Y-8+Math.sin(t*5)*1.5,4,4,COL[TYPE[it.k]]);if(level<3){g.font='5px "Press Start 2P",monospace';g.textAlign='center';g.fillStyle='#150e28';g.fillText(IN[it.k],X+13,Y+31);g.fillStyle='#fff';g.fillText(IN[it.k],X+12,Y+30)}}
+}
+function drawBoss(){if(!boss)return;if(boss.d<0&&(boss.ph===1||boss.ph===2)){g.fillStyle='rgba(255,60,60,'+(.18+.12*Math.sin(t*20))+')';g.fillRect(Math.round(boss.tx-4),150,56,84)}const X=boss.x+(boss.sh>0?Math.sin(t*70)*2:0),Y=boss.y+(boss.d>=0?-boss.d*30:0)+Math.sin(t*4)*2;
+  g.save();g.globalAlpha=boss.d>=0?Math.max(0,1-boss.d/.8):(boss.fl>0&&Math.floor(t*30)%2?.45:1);g.translate(X,Y);g.scale(4,4);g.translate(-X,-Y);
+  const c='#8d8d8d';shp([[X+2,Y+2,8,8,c],[X,Y+4,12,4,c],[X+4,Y,4,12,c],[X+1,Y+1,2,2,c],[X+9,Y+1,2,2,c],[X+1,Y+9,2,2,c],[X+9,Y+9,2,2,c]]);
+  r(X+3,Y+4,2,2,'#fff');r(X+7,Y+4,2,2,'#fff');r(X+4,Y+5,1,1,'#c00');r(X+7,Y+5,1,1,'#c00');r(X+3,Y+3,3,1,'#222');r(X+6,Y+3,3,1,'#222');r(X+4,Y+8,4,1,'#222');r(X+4,Y+9,1,1,'#fff');r(X+7,Y+9,1,1,'#fff');
+  g.restore();
+  if(boss.d<0){const by=Y-12;r(X-1,by-1,50,6,'#150e28');r(X,by,48,4,'#444');r(X,by,Math.round(48*boss.hp/boss.max),4,'#e04b4b');g.font='6px "Press Start 2P",monospace';g.textAlign='center';g.fillStyle='#150e28';g.fillText(NAME[boss.need],X+25,by-3);g.fillStyle=COL[boss.need];g.fillText(NAME[boss.need],X+24,by-4)}}
+function bossHit(x,y){
+  if(!boss||boss.d>=0||Math.hypot(x-(boss.x+24),y-(boss.y+24))>30)return;cast=.25;
+  if(sel===boss.need){boss.hp--;combo++;charge=Math.min(100,charge+6);const m=Math.min(1+Math.floor(combo/3),5),p=25*m;score+=p;pops.push({x:boss.x+24,y:boss.y,l:1,s:'+'+p,c:COL[sel]});bolt(boss.x+24,boss.y+24,COL[sel]);spark(boss.x+24,boss.y+24,COL[sel],24);boss.fl=.25;tone(300,.2,'square',.1);
+    if(boss.hp<=0)killBoss();
+    else{const o=ORDER.filter(k=>k!==boss.need);boss.need=o[Math.floor(Math.random()*o.length)]}}
+  else{boss.sh=.4;combo=0;score=Math.max(0,score-5);if(timed)timeLeft=Math.max(1,timeLeft-3);say('Ela só cai com '+NAME[boss.need]+'! (-5 pontos)');tone(160,.25,'sawtooth',.08)}}
+function killBoss(){boss.d=0;score+=100;pops.push({x:80,y:120,l:1.4,s:'+100',c:'#ffd23f'});spark(boss.x+24,boss.y+24,'#ffd23f',60);[392,523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.2),i*90));say('Super Sujeira derrotada!')}
+function hitPat(){if(!boss||boss.d>=0)return;const dmg=Math.max(3,Math.ceil(boss.max*.6));boss.hp=Math.max(0,boss.hp-dmg);boss.fl=.5;score+=60;pops.push({x:boss.x+24,y:boss.y,l:1.2,s:'-'+dmg+' +60',c:'#cfe9ff'});spark(boss.x+24,boss.y+24,'#cfe9ff',50);tone(880,.3,'sine',.1);if(boss.hp<=0)killBoss();else{const o=ORDER.filter(k=>k!==boss.need);boss.need=o[Math.floor(Math.random()*o.length)]}}
+function hurt(){lives--;inv=1.8;combo=0;tone(110,.4,'sawtooth',.12);say('Ai! A Super Sujeira te acertou!');if(lives<=0)lose('hp')}
+function usePatronus(){if(state!=='play')return;if(charge<100){say('Arrume o quarto para encher a barra!');return}if(!boss||boss.d>=0){say('Guarde o Patronum para o chefão!');return}charge=0;pat={t:0,x:hx+12,y:206,cx:hx+12,cy:206};tone(660,.3,'sine',.1);say('Expecto Patronum!')}
+function drawStag(){const S=['..w.w.......','.w.w.w......','..www.......','..wwwwwwww..','...wwwwwwwww','...wwwwwwww.','...w.w..w.w.','...w.w..w.w.'],x=pat.cx-12,y=pat.cy-8;r(x-3,y-3,30,22,'rgba(160,220,255,.35)');S.forEach((row,j)=>[...row].forEach((c,i)=>{if(c==='w')r(x+i*2,y+j*2,2,2,'#e8f6ff')}))}
+function newGame(){level=1;score=0;charge=0;try{localStorage.setItem('qm_level',1);localStorage.setItem('qm_score',0);localStorage.setItem('qm_ch',0)}catch(e){}$('ov').hidden=true;startMusic();startLevel()}
+function room(){
+  r(0,0,W,100,'#6f5aa8');for(let x=0;x<W;x+=16)r(x,0,2,100,'#6552a0');
+  r(0,96,W,4,'#4b3a7a');r(0,100,W,140,'#9c6b3f');for(let y=114;y<H;y+=14)r(0,y,W,1,'#85572f');
+  r(104,14,30,34,'#3a2a1a');r(106,16,26,30,'#0f1b4a');r(118,22,6,6,'#ffe9a8');r(119,16,1,30,'#3a2a1a');r(106,30,26,1,'#3a2a1a');
+  r(12,44,52,4,'#7a4a2a');[['#b3402f',14],['#3fa7f5',20],['#ffd23f',26],['#2d8f85',33],['#e04b8a',40]].forEach(([c,x])=>r(x,34,5,10,c));
+  r(88,64,64,34,'#7a4a2a');r(90,70,60,24,'#c0262d');r(90,64,16,10,'#fff');r(90,84,60,2,'#a01d24');
+}
+function draw(){
+  room();
+  drawBoss();[...items].sort((a,b)=>a.y-b.y).forEach(drawItem);
+  const bob=Math.round(Math.sin(t*3)*1);if(!(inv>0&&Math.floor(t*20)%2))spr(HERO,hx,200+bob,2);
+  g.font='6px "Press Start 2P",monospace';g.textAlign='center';g.fillStyle='#150e28';g.fillText('Isabella',hx+13,197+bob);g.fillStyle='#fff';g.fillText('Isabella',hx+12,196+bob);
+  if(cast>0)r(hx+24,221+bob,4,4,COL[sel]);if(pat)drawStag();
+  parts.forEach(p=>{g.globalAlpha=Math.min(1,p.l*3);r(p.x,p.y,2,2,p.c);g.globalAlpha=1});
+  pops.forEach(p=>{g.font='7px "Press Start 2P",monospace';g.textAlign='center';g.fillStyle='#150e28';g.fillText(p.s,p.x+1,p.y+1);g.fillStyle=p.c;g.fillText(p.s,p.x,p.y)});
+}
+function spark(x,y,c,n){for(let i=0;i<n;i++)parts.push({x,y,vx:(Math.random()-.5)*60,vy:(Math.random()-.8)*60,l:.3+Math.random()*.4,c})}
+function bolt(x2,y2,c){const x1=hx+25,y1=223;for(let i=0;i<14;i++){const f=i/14;parts.push({x:x1+(x2-x1)*f,y:y1+(y2-y1)*f,vx:0,vy:0,l:.1+f*.3,c})}}
+function update(dt){
+  items.forEach(i=>{if(i.d>=0)i.d+=dt;if(i.sh>0)i.sh-=dt});
+  if(state==='play'){items=items.filter(i=>i.d<.5);if(items.length===0&&!boss)win()}
+  parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=80*dt;p.l-=dt});parts=parts.filter(p=>p.l>0);
+  if(cast>0)cast-=dt;if(msgT>0&&(msgT-=dt)<=0)$('msg').textContent='';
+  if(state==='play'){if(timed){timeLeft-=dt;if(timeLeft<=0)lose()}items.forEach(i=>{if(i.d<0&&i.vx){i.x+=i.vx*dt;if(i.x<6||i.x>122)i.vx*=-1}})}
+  if(boss){if(boss.sh>0)boss.sh-=dt;if(boss.fl>0)boss.fl-=dt;
+    if(boss.d>=0){boss.d+=dt;if(boss.d>.8)boss=null}
+    else if(state==='play'){boss.pt=(boss.pt||0)+dt;const sp=1+level/40;
+      if(!boss.ph){boss.x+=(56+Math.sin(t*(1+level/20))*32-boss.x)*Math.min(1,dt*4);boss.y=108;if(boss.pt>Math.max(1.6,3.2-level*.08)){boss.ph=1;boss.pt=0;boss.tx=Math.max(0,Math.min(112,hx+12-24))}}
+      else if(boss.ph===1){boss.x+=(boss.tx-boss.x)*Math.min(1,dt*6);boss.y=108;if(boss.pt>Math.max(.6,.95-level*.015)){boss.ph=2;boss.pt=0}}
+      else if(boss.ph===2){boss.y+=dt*170*sp;if(boss.y>=170){boss.y=170;boss.ph=3;boss.pt=0;if(inv<=0&&Math.abs(hx+12-(boss.x+24))<28)hurt()}}
+      else{boss.y-=dt*90;if(boss.y<=108){boss.y=108;boss.ph=0;boss.pt=0}}}}
+  if(state==='play')hx=Math.max(4,Math.min(132,hx+mv*95*dt));if(inv>0)inv-=dt;
+  if(pat){pat.t+=dt;const k=Math.min(1,pat.t/.6),tx=boss?boss.x+24:80,ty=boss?boss.y+24:130;pat.cx=pat.x+(tx-pat.x)*k;pat.cy=pat.y+(ty-pat.y)*k;parts.push({x:pat.cx,y:pat.cy+Math.random()*8,vx:(Math.random()-.5)*20,vy:(Math.random()-.5)*20,l:.4,c:'#cfe9ff'});if(k>=1){hitPat();pat=null}}
+  pops.forEach(p=>{p.y-=18*dt;p.l-=dt});pops=pops.filter(p=>p.l>0);
+  const mm=Math.min(1+Math.floor(combo/3),5);
+  $('lv').textContent='Nível '+level;$('pts').textContent='Pts '+score+(mm>1?' x'+mm:'');$('tm').textContent=timed?'⏱ '+Math.ceil(Math.max(0,timeLeft)):'';$('left').textContent='Resta '+(items.filter(i=>i.d<0).length+(boss&&boss.d<0?1:0));$('hp').textContent=boss?'♥'.repeat(Math.max(0,lives)):'';$('spf').style.width=charge+'%';$('spt').textContent=charge>=100?'EXPECTO PATRONUM!':'Patronum '+Math.floor(charge)+'%';$('sp').classList.toggle('rdy',charge>=100);
+}
+function win(){
+  state='win';const bonus=(timed?Math.ceil(timeLeft)*3:0)+level*20;score+=bonus;if(score>best)best=score;level++;try{localStorage.setItem('qm_level',level);localStorage.setItem('qm_best',best);localStorage.setItem('qm_score',score);localStorage.setItem('qm_ch',charge)}catch(e){}
+  [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.18),i*120));
+  $('ov').innerHTML='<h1>QUARTO ARRUMADO!</h1><p>Muito bem, Isabella! Bônus +'+bonus+'</p><p>Pontos: '+score+' | Recorde: '+best+'</p><p>Próximo: nível '+level+(level%5===0?' (CHEFÃO!)':level>=4?' com objetos em movimento!':'')+'</p><button id="go">Próximo nível</button>';
+  $('ov').hidden=false;$('go').onclick=startLevel;
+}
+function lose(why){state='lose';if(score>best)best=score;try{localStorage.setItem('qm_best',best)}catch(e){}tone(120,.5,'sawtooth',.1);$('ov').innerHTML='<h1>'+(why==='hp'?'ISABELLA CAIU!':'TEMPO ESGOTADO!')+'</h1><p>'+(why==='hp'?'A Super Sujeira foi forte demais.':'A bagunça venceu desta vez.')+' Pontos: '+score+' | Recorde: '+best+'</p><button id="go">Tentar de novo</button><button id="nw">Novo jogo</button>';$('ov').hidden=false;$('go').onclick=()=>{score=lvScore;startLevel()};$('nw').onclick=newGame}
+cv.addEventListener('pointerdown',e=>{
+  if(state!=='play')return;
+  const b=cv.getBoundingClientRect(),x=(e.clientX-b.left)/b.width*W,y=(e.clientY-b.top)/b.height*H;
+  let best=null,bd=20;items.forEach(i=>{const d=Math.hypot(i.x+12-x,i.y+10-y);if(i.d<0&&d<bd){bd=d;best=i}});
+  if(!best){bossHit(x,y);return}
+  cast=.25;
+  if(TYPE[best.k]===sel){best.d=0;combo++;charge=Math.min(100,charge+20);const m=Math.min(1+Math.floor(combo/3),5),p=10*m;score+=p;pops.push({x:best.x+12,y:best.y,l:1,s:'+'+p,c:COL[sel]});bolt(best.x+12,best.y+10,COL[sel]);spark(best.x+12,best.y+10,COL[sel],18);tone(780,.15,'triangle',.1)}
+  else{best.sh=.4;combo=0;score=Math.max(0,score-5);if(timed)timeLeft=Math.max(1,timeLeft-3);say(level<4?'Errou! Use '+NAME[TYPE[best.k]]+' (-5 pontos)':'Feitiço errado! -5 pontos');tone(160,.25,'sawtooth',.08)}
+});
+(()=>{const p=$('pt').getContext('2d');HERO.forEach((row,j)=>[...row].forEach((ch,i)=>{if(ch!=='.'){p.fillStyle=PAL[ch];p.fillRect(i*4,j*4,4,4)}}))})();
+$('go').onclick=()=>{const go=()=>{$('ov').hidden=true;startMusic();startLevel()};let seen=0;try{seen=localStorage.getItem('qm_seen')}catch(e){}seen?go():openHow(go)};
+function fit(){const s=$('stage').getBoundingClientRect(),k=Math.min(s.width/W,s.height/H);cv.style.width=W*k+'px';cv.style.height=H*k+'px'}
+addEventListener('resize',fit);fit();
+if(level>1){$('go').textContent='Continuar: nível '+level;$('new').hidden=false;$('new').onclick=newGame}
+function loop(ms){const dt=Math.min(.05,(ms-last)/1000||0);last=ms;t+=dt;update(dt);draw();requestAnimationFrame(loop)}
+const LEAD=[0,3,7,12,10,7,3,7,5,8,12,15,14,12,8,12,0,3,7,12,10,7,3,7,8,7,5,3,2,null,0,null],BASS=[-12,-12,-7,-5,-12,-12,-4,-5];
+let mus=true,mi=0,mt=null;
+const nf=n=>220*Math.pow(2,n/12);
+function note(f,d,ty,v){const a=tone.a,o=a.createOscillator(),n=a.createGain();o.type=ty;o.frequency.value=f;n.gain.setValueAtTime(v,a.currentTime);n.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(n);n.connect(a.destination);o.start();o.stop(a.currentTime+d)}
+function startMusic(){try{tone.a=tone.a||new (window.AudioContext||window.webkitAudioContext)();tone.a.resume();if(mt)return;mt=setInterval(()=>{if(!mus||document.hidden)return;const s=mi++%32;if(LEAD[s]!==null)note(nf(LEAD[s]),.19,'square',.025);if(s%4===0)note(nf(BASS[s/4]),.75,'triangle',.07)},210)}catch(e){}}
+$('mu').onclick=()=>{mus=!mus;$('mu').textContent=mus?'♪ ON':'♪ OFF';startMusic()};
+const hold=(id,v)=>{const b=$(id);b.onpointerdown=e=>{e.preventDefault();mv=v};['onpointerup','onpointerleave','onpointercancel'].forEach(k=>b[k]=()=>{if(mv===v)mv=0});b.oncontextmenu=e=>e.preventDefault()};
+hold('bl',-1);hold('br',1);$('sp').onclick=usePatronus;
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a')mv=-1;if(e.key==='ArrowRight'||e.key==='d')mv=1});
+addEventListener('keyup',e=>{if(['ArrowLeft','ArrowRight','a','d'].includes(e.key))mv=0});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+let dp=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('inst').hidden=false});
+$('inst').onclick=()=>{if(dp){dp.prompt();dp=null;$('inst').hidden=true}};
+function openHow(cb){$('how').hidden=false;$('hok').onclick=()=>{$('how').hidden=true;try{localStorage.setItem('qm_seen',1)}catch(e){}if(cb)cb()}}
+$('hw').onclick=()=>openHow();
+buildSpells();requestAnimationFrame(loop);
+</script><script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js"))</script></body></html>
